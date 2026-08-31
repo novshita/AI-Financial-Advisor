@@ -1,5 +1,9 @@
 # AI Financial Advisor — Multi-Agent Project
 
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Streamlit](https://img.shields.io/badge/streamlit-app-ff4b4b.svg)](https://streamlit.io/)
+[![Last Commit](https://img.shields.io/github/last-commit/novshita/AI-Financial-Advisor.svg)](https://github.com/novshita/AI-Financial-Advisor/commits/main)
+
 A ready-to-run BCA AI & Data Analytics project built with Python and Streamlit.
 
 ## Features
