@@ -14,11 +14,13 @@ A ready-to-run BCA AI & Data Analytics project built with Python and Streamlit.
 - Goal planning agent
 - Investment education agent
 - Financial calculation agent
+- Advisor agent — answers free-text questions using the other agents' outputs
 - Multi-agent coordinator
 - Financial health score
 - EMI calculator
 - Goal-based monthly saving calculator
 - Interactive Streamlit dashboard
+- Admin and user accounts backed by SQLite, with role-based access
 - No API key required for the included rule-based demo
 
 ## Run locally
@@ -37,6 +39,15 @@ streamlit run app.py
 5. Open the local URL shown by Streamlit, normally:
 `http://localhost:8501`
 
+A local `finance.db` SQLite file is created automatically on first run (git-ignored).
+
+## Accounts & roles
+
+- **Admin**: a default admin account is seeded on first run — `admin` / `admin123`. Change this password after first login if you deploy this anywhere shared. Admins see every user's data: a table of all users with their latest financial snapshot, and can drill into any individual user's dashboard read-only. Admins do not have their own financial profile or access to the Advisor Agent tab.
+- **User**: sign up via "Create account" on the login screen. A user only sees their own financial profile and history, and gets an "🧑‍💼 Advisor Agent" tab that admins do not have.
+
+Passwords are stored as PBKDF2-HMAC-SHA256 hashes with a per-user salt (stdlib `hashlib`/`secrets` — no extra dependency).
+
 ## Project structure
 
 ```text
@@ -53,23 +64,23 @@ AI_Financial_Advisor_Agent/
 │   ├── goal_agent.py
 │   ├── investment_agent.py
 │   ├── calculation_agent.py
+│   ├── advisor_agent.py
 │   └── coordinator.py
 └── utils/
     ├── __init__.py
-    └── calculations.py
+    ├── calculations.py
+    └── db.py
 ```
 
 ## How it is agentic
 
-The coordinator passes the user's financial profile through multiple specialized agents. Each agent performs a distinct task, and the coordinator combines their outputs into a final planning report.
+The coordinator passes the user's financial profile through multiple specialized agents. Each agent performs a distinct task, and the coordinator combines their outputs into a final planning report. The Advisor Agent adds a question-driven layer on top: it parses a user's free-text question for intent (saving, debt, investing, or emergency fund) and composes an answer from whichever of the other agents' outputs is most relevant — no LLM or API key involved.
 
 ## Future upgrades
 - Add an LLM API for natural-language conversations.
 - Add CSV expense upload and automatic categorization.
-- Add SQLite user profiles and history.
 - Add charts for spending trends.
 - Add current market/news data only from trusted sources.
-- Add authentication.
 - Add PDF report generation.
 
 ## Disclaimer

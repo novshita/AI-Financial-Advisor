@@ -15,6 +15,10 @@ ENV/
 !.env.example
 .streamlit/secrets.toml
 
+# Local database
+finance.db
+finance.db-*
+
 # Distribution / packaging
 build/
 dist/
