@@ -89,6 +89,17 @@ def verify_user(username, password):
     return {"id": row["id"], "username": row["username"], "role": row["role"]}
 
 
+def set_password(user_id, new_password):
+    salt = secrets.token_hex(16).encode()
+    password_hash = _hash_password(new_password, salt)
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE users SET password_hash = ?, salt = ?, iterations = ? WHERE id = ?",
+            (password_hash, salt.hex(), PBKDF2_ITERATIONS, user_id),
+        )
+        conn.commit()
+
+
 def username_exists(username):
     with get_connection() as conn:
         row = conn.execute("SELECT 1 FROM users WHERE username = ?", (username,)).fetchone()

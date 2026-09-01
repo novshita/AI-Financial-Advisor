@@ -1,3 +1,5 @@
+import secrets
+
 import streamlit as st
 import pandas as pd
 
@@ -17,6 +19,7 @@ from utils.db import (
     save_profile_snapshot,
     get_latest_profile,
     list_users_with_latest_snapshot,
+    set_password,
 )
 
 st.set_page_config(page_title="AI Financial Advisor", page_icon="💰", layout="wide")
@@ -61,6 +64,26 @@ def render_login():
                     st.success("Account created. You can log in now.")
 
     st.caption("Default admin login: **admin / admin123** (change after first login).")
+    st.caption("Forgot your password? Ask an admin to reset it for you from the Admin dashboard.")
+
+
+def render_change_password(user, key_prefix):
+    with st.sidebar.expander("🔑 Change Password"):
+        with st.form(f"change_password_form_{key_prefix}"):
+            current_password = st.text_input("Current password", type="password", key=f"cur_pw_{key_prefix}")
+            new_password = st.text_input("New password", type="password", key=f"new_pw_{key_prefix}")
+            confirm_password = st.text_input("Confirm new password", type="password", key=f"confirm_pw_{key_prefix}")
+            submitted = st.form_submit_button("Update password")
+            if submitted:
+                if not verify_user(user["username"], current_password):
+                    st.error("Current password is incorrect.")
+                elif not new_password:
+                    st.error("New password cannot be empty.")
+                elif new_password != confirm_password:
+                    st.error("New password and confirmation do not match.")
+                else:
+                    set_password(user["id"], new_password)
+                    st.success("Password updated.")
 
 
 def render_dashboard(profile, budget, goal, investment, calc, *, editable, key_prefix, extra_tab_label=None):
@@ -171,6 +194,7 @@ def render_advisor_tab(tab, user, profile, budget, goal, investment, calc):
 
 def render_user_view(user):
     st.sidebar.write(f"👤 Logged in as **{user['username']}** ({user['role']})")
+    render_change_password(user, key_prefix="user")
     if st.sidebar.button("Log out", key="logout_user"):
         st.session_state.user = None
         st.rerun()
@@ -228,6 +252,7 @@ def render_user_view(user):
 
 def render_admin_view(user):
     st.sidebar.write(f"👤 Logged in as **{user['username']}** ({user['role']})")
+    render_change_password(user, key_prefix="admin")
     if st.sidebar.button("Log out", key="logout_admin"):
         st.session_state.user = None
         st.rerun()
@@ -263,6 +288,13 @@ def render_admin_view(user):
     st.subheader("View a user's dashboard")
     selected_username = st.selectbox("Select user", [u["username"] for u in non_admins])
     selected = next(u for u in non_admins if u["username"] == selected_username)
+
+    with st.expander(f"🔑 Reset password for {selected_username}"):
+        st.caption("Generates a new temporary password. Share it with the user securely; they should change it after logging in.")
+        if st.button("Generate temporary password", key=f"reset_pw_{selected['id']}"):
+            temp_password = secrets.token_urlsafe(6)
+            set_password(selected["id"], temp_password)
+            st.success(f"New temporary password for **{selected_username}**: `{temp_password}`")
 
     if selected["income"] is None:
         st.info(f"{selected_username} hasn't submitted any financial data yet.")
