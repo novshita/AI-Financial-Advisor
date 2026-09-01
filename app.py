@@ -26,7 +26,6 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 RISK_OPTIONS = ["Conservative", "Moderate", "Aggressive"]
-BASE_TAB_LABELS = ["📊 Overview", "💸 Budget Agent", "🎯 Goal Agent", "📈 Investment Agent", "🧮 Calculations", "🤖 AI Coordinator"]
 
 
 def render_login():
@@ -75,10 +74,7 @@ def render_dashboard(profile, budget, goal, investment, calc, *, editable, key_p
     c3.metric("Savings Rate", f"{(max(income-expenses-debt,0)/income*100 if income else 0):.1f}%")
     c4.metric("Goal Saving Needed", f"₹{monthly_goal_saving(goal_amount, goal_months):,.0f}/mo")
 
-    labels = BASE_TAB_LABELS + ([extra_tab_label] if extra_tab_label else [])
-    tabs = st.tabs(labels)
-
-    with tabs[0]:
+    def render_overview():
         st.subheader("Financial Overview")
         st.dataframe(pd.DataFrame({
             "Metric": ["Monthly Income", "Monthly Expenses", "Monthly Debt", "Available Surplus", "Current Savings", "Goal"],
@@ -87,13 +83,13 @@ def render_dashboard(profile, budget, goal, investment, calc, *, editable, key_p
         st.progress(min(score/100, 1.0))
         st.write("**Profile:**", profile["summary"])
 
-    with tabs[1]:
+    def render_budget():
         st.subheader("Budget Analysis Agent")
         for item in budget["findings"]:
             st.write(("⚠️ " if item["severity"] == "warning" else "✅ ") + item["text"])
         st.bar_chart(pd.DataFrame({"Amount": [expenses, debt, max(income-expenses-debt, 0)]}, index=["Expenses", "Debt/EMI", "Surplus"]))
 
-    with tabs[2]:
+    def render_goal():
         st.subheader("Goal Planning Agent")
         st.write(f"**Goal:** {goal_name}")
         st.write(f"Target: **₹{goal_amount:,.0f}** in **{goal_months} months**")
@@ -104,14 +100,14 @@ def render_dashboard(profile, budget, goal, investment, calc, *, editable, key_p
         else:
             st.success("Your current surplus can cover the target under this simple no-return projection.")
 
-    with tabs[3]:
+    def render_investment():
         st.subheader("Investment Education Agent")
         st.write(f"Risk preference: **{risk}**")
         for item in investment:
             st.write(f"**{item['category']}** — {item['description']}")
         st.caption("Always verify current products, fees, taxes, suitability and regulations before investing.")
 
-    with tabs[4]:
+    def render_calculations():
         st.subheader("Financial Calculations")
         st.write(f"**Emergency-fund guideline:** ₹{calc['emergency_target']:,.0f} (3 months of core outgo estimate)")
         st.write(f"**Debt-to-income ratio:** {calc['debt_ratio']*100:.1f}%")
@@ -126,11 +122,28 @@ def render_dashboard(profile, budget, goal, investment, calc, *, editable, key_p
         else:
             st.caption("The EMI calculator is available on each user's own dashboard.")
 
-    with tabs[5]:
+    def render_coordinator():
         st.subheader("Multi-Agent Coordinator")
         st.markdown(coordinator(profile, budget, goal, investment, calc))
 
-    return tabs[6] if extra_tab_label else None
+    tab_defs = [("📊 Overview", render_overview), ("💸 Budget Agent", render_budget)]
+    if not editable:
+        # Goal Agent stays available to admin's read-only drill-in view, but is
+        # hidden from a user's own dashboard.
+        tab_defs.append(("🎯 Goal Agent", render_goal))
+    tab_defs += [
+        ("📈 Investment Agent", render_investment),
+        ("🧮 Calculations", render_calculations),
+        ("🤖 AI Coordinator", render_coordinator),
+    ]
+
+    labels = [label for label, _ in tab_defs] + ([extra_tab_label] if extra_tab_label else [])
+    tabs = st.tabs(labels)
+    for tab, (_, render_fn) in zip(tabs, tab_defs):
+        with tab:
+            render_fn()
+
+    return tabs[len(tab_defs)] if extra_tab_label else None
 
 
 def render_advisor_tab(tab, user, profile, budget, goal, investment, calc):
