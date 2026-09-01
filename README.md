@@ -21,6 +21,7 @@ A ready-to-run BCA AI & Data Analytics project built with Python and Streamlit.
 - Goal-based monthly saving calculator
 - Interactive Streamlit dashboard
 - Admin and user accounts backed by SQLite, with role-based access
+- Change password (self-service) and admin-assisted password reset
 - No API key required for the included rule-based demo
 
 ## Run locally
@@ -47,6 +48,11 @@ A local `finance.db` SQLite file is created automatically on first run (git-igno
 - **User**: sign up via "Create account" on the login screen. A user only sees their own financial profile and history, and gets an "🧑‍💼 Advisor Agent" tab that admins do not have.
 
 Passwords are stored as PBKDF2-HMAC-SHA256 hashes with a per-user salt (stdlib `hashlib`/`secrets` — no extra dependency).
+
+## Password management
+
+- **Change password**: any logged-in user or admin can open "🔑 Change Password" in the sidebar, confirm their current password, and set a new one.
+- **Forgot password**: there's no email service in this app, so self-service reset isn't available. Instead, an admin can open "🔑 Reset password for `<user>`" on the Admin dashboard to generate a one-time temporary password and hand it to the user, who should change it after logging in.
 
 ## Project structure
 
