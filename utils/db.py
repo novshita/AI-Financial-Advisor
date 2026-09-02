@@ -130,6 +130,13 @@ def get_latest_profile(user_id):
     return dict(row) if row else None
 
 
+def delete_user(user_id):
+    with get_connection() as conn:
+        conn.execute("DELETE FROM profiles WHERE user_id = ?", (user_id,))
+        conn.execute("DELETE FROM users WHERE id = ? AND role = 'user'", (user_id,))
+        conn.commit()
+
+
 def list_users_with_latest_snapshot():
     with get_connection() as conn:
         rows = conn.execute("""

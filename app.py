@@ -20,6 +20,7 @@ from utils.db import (
     get_latest_profile,
     list_users_with_latest_snapshot,
     set_password,
+    delete_user,
 )
 
 st.set_page_config(page_title="AI Financial Advisor", page_icon="💰", layout="wide")
@@ -284,6 +285,30 @@ def render_admin_view(user):
     if not non_admins:
         st.info("No regular users have signed up yet.")
         return
+
+    st.subheader("Manage users")
+    for u in non_admins:
+        col1, col2, col3 = st.columns([3, 2, 2])
+        col1.write(f"**{u['username']}**")
+        col2.write(f"Joined {u['created_at'][:10]}")
+        confirm_key = f"confirm_delete_{u['id']}"
+        if col3.button("🗑️ Delete", key=f"delete_btn_{u['id']}"):
+            st.session_state[confirm_key] = True
+
+        if st.session_state.get(confirm_key):
+            st.warning(
+                f"Permanently delete **{u['username']}** and all their financial data? This cannot be undone."
+            )
+            confirm_col1, confirm_col2 = st.columns(2)
+            if confirm_col1.button("✅ Yes, delete permanently", key=f"confirm_yes_{u['id']}"):
+                delete_user(u["id"])
+                st.session_state.pop(confirm_key, None)
+                st.success(f"Deleted user {u['username']}.")
+                st.rerun()
+            if confirm_col2.button("❌ Cancel", key=f"confirm_no_{u['id']}"):
+                st.session_state.pop(confirm_key, None)
+                st.rerun()
+        st.divider()
 
     st.subheader("View a user's dashboard")
     selected_username = st.selectbox("Select user", [u["username"] for u in non_admins])
